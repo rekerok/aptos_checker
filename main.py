@@ -9,7 +9,7 @@ resource_type_balance = "0x1::coin::CoinStore"
 ################# CONFIG #################
 url = "https://rpc.ankr.com/http/aptos/v1"  # rpc
 wallets = "wallets.txt"  # имя файла откуда брать адреса
-to_file = "apt_balance.csv" # файл в который записывать балансы аптоса
+to_file = "apt_balance.csv"  # файл в который записывать балансы аптоса
 tokens = {
     "apt": "0x1::aptos_coin::AptosCoin",
     "lz_usdc": "0xf22bede237a07e121b56d91a491eb7bcdfd1f5907926a9e58338f964a01b17fa::asset::USDC",
@@ -24,6 +24,7 @@ tokens = {
 
 def get_addr_token(full_loken):
     return full_loken.split("::")[0]
+
 
 tokens_info = dict()
 
@@ -52,14 +53,22 @@ for address in tqdm.tqdm(adressess):
 
 with open(to_file, "w") as file:
     writer = csv.writer(file)
-    writer.writerow(("number", "address", *tokens.keys()))
+    writer.writerow(("number", "address", *tokens.keys(), "recived transaction"))
     counter = 1
     for address, balance in balances.items():
+        count_transation_response = requests.get(
+            f"https://api.aptoscan.com/api?module=account&action=totaltxssent&address={address}"
+        )
+        if count_transation_response.status_code == 200:
+            count = count_transation_response.json()["result"]
+        else:
+            count = 0
         writer.writerow(
             (
                 counter,
                 address,
                 *[str(balance[i]).replace(".", ",") for i in balance.keys()],
+                count,
             )
         )
         counter += 1
